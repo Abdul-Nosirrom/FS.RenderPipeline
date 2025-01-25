@@ -143,10 +143,7 @@ namespace UnityEditor.Rendering.Universal
             for (int rendererIndex = 0; rendererIndex < rendererDataList.Length; ++rendererIndex)
             {
                 var rendererData = rendererDataList[rendererIndex] as UniversalRendererData;
-                if (rendererData == null)
-                    continue;
-
-                if (!rendererData.usesDeferredLighting)
+                if (rendererData == null || rendererData.renderingMode != RenderingMode.Deferred)
                     continue;
 
                 var rendererFeatures = rendererData.rendererFeatures;

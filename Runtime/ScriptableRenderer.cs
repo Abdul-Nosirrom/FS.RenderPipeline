@@ -278,19 +278,8 @@ namespace UnityEngine.Rendering.Universal
 
             if (camera.allowDynamicResolution)
             {
-#if ENABLE_VR && ENABLE_XR_MODULE
-                // Use eye texture's scaled width and height as screen params when XR is enabled
-                if (cameraData.xr.enabled)
-                {
-                    scaledCameraTargetWidth = (float)cameraData.xr.renderTargetScaledWidth;
-                    scaledCameraTargetHeight = (float)cameraData.xr.renderTargetScaledHeight;
-                }
-                else
-#endif
-                {
                 scaledCameraTargetWidth *= ScalableBufferManager.widthScaleFactor;
                 scaledCameraTargetHeight *= ScalableBufferManager.heightScaleFactor;
-                }
             }
 
             float near = camera.nearClipPlane;
@@ -1653,12 +1642,10 @@ namespace UnityEngine.Rendering.Universal
             cmd.SetKeyword(ShaderGlobalKeywords.MainLightShadowCascades, false);
             cmd.SetKeyword(ShaderGlobalKeywords.AdditionalLightsVertex, false);
             cmd.SetKeyword(ShaderGlobalKeywords.AdditionalLightsPixel, false);
-            cmd.SetKeyword(ShaderGlobalKeywords.ClusterLightLoop, false);
-            cmd.SetKeyword(ShaderGlobalKeywords.ForwardPlus, false); // Backward compatibility. Deprecated in 6.1.
+            cmd.SetKeyword(ShaderGlobalKeywords.ForwardPlus, false);
             cmd.SetKeyword(ShaderGlobalKeywords.AdditionalLightShadows, false);
             cmd.SetKeyword(ShaderGlobalKeywords.ReflectionProbeBlending, false);
             cmd.SetKeyword(ShaderGlobalKeywords.ReflectionProbeBoxProjection, false);
-            cmd.SetKeyword(ShaderGlobalKeywords.ReflectionProbeAtlas, false);
             cmd.SetKeyword(ShaderGlobalKeywords.SoftShadows, false);
             cmd.SetKeyword(ShaderGlobalKeywords.SoftShadowsLow, false);
             cmd.SetKeyword(ShaderGlobalKeywords.SoftShadowsMedium, false);
@@ -2282,26 +2269,29 @@ namespace UnityEngine.Rendering.Universal
 
         private protected int AdjustAndGetScreenMSAASamples(RenderGraph renderGraph, bool useIntermediateColorTarget)
         {
-            // In the editor (ConfigureTargetTexture in PlayModeView.cs) and many platforms, the system render target is always allocated without MSAA    
-            if (!SystemInfo.supportsMultisampledBackBuffer) return 1;
+            #if UNITY_EDITOR
+                // In the editor, the system render target is always allocated with no msaa
+                // See: ConfigureTargetTexture in PlayModeView.cs
+                return 1;
+            #else
+                // In the players, when URP main rendering is done to an intermediate target and NRP enabled
+                // we disable multisampling for the system backbuffer as a bandwidth optimization
+                // doing so, we avoid storing costly msaa samples back to system memory for nothing
+                bool canOptimizeScreenMSAASamples = UniversalRenderPipeline.canOptimizeScreenMSAASamples
+                                                 && useIntermediateColorTarget
+                                                 && renderGraph.nativeRenderPassesEnabled
+                                                 && Screen.msaaSamples > 1;
+                
+                if (canOptimizeScreenMSAASamples)
+                {
+                    Screen.SetMSAASamples(1);
+                }
 
-            // For mobile platforms, when URP main rendering is done to an intermediate target and NRP enabled
-            // we disable multisampling for the system render target as a bandwidth optimization
-            // doing so, we avoid storing costly MSAA samples back to system memory for nothing
-            bool canOptimizeScreenMSAASamples = UniversalRenderPipeline.canOptimizeScreenMSAASamples
-                                                && useIntermediateColorTarget
-                                                && renderGraph.nativeRenderPassesEnabled
-                                                && Screen.msaaSamples > 1;
-            
-            if (canOptimizeScreenMSAASamples)
-            {
-                Screen.SetMSAASamples(1);
-            }
+                // iOS and macOS corner case
+                bool screenAPIHasOneFrameDelay = (Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.IPhonePlayer);
 
-            // iOS and macOS corner case
-            bool screenAPIHasOneFrameDelay = (Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.IPhonePlayer);
-
-            return screenAPIHasOneFrameDelay ? Mathf.Max(UniversalRenderPipeline.startFrameScreenMSAASamples, 1) : Mathf.Max(Screen.msaaSamples, 1);
+                return screenAPIHasOneFrameDelay ? Mathf.Max(UniversalRenderPipeline.startFrameScreenMSAASamples, 1) : Mathf.Max(Screen.msaaSamples, 1);
+            #endif
         }
 
         internal static void SortStable(List<ScriptableRenderPass> list)

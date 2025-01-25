@@ -3,7 +3,7 @@
 #define UNIVERSAL_TERRAIN_LIT_PASSES_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/GBufferOutput.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/UnityGBuffer.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 
 struct Attributes
@@ -381,7 +381,7 @@ void ComputeMasks(out half4 masks[4], half4 hasMask, Varyings IN)
 
 // Used in Standard Terrain shader
 #ifdef TERRAIN_GBUFFER
-GBufferFragOutput SplatmapFragment(Varyings IN)
+FragmentOutput SplatmapFragment(Varyings IN)
 #else
 void SplatmapFragment(
     Varyings IN
@@ -469,8 +469,7 @@ void SplatmapFragment(
     half4 color;
     Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS, inputData.shadowMask);
     MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI, inputData.shadowMask);
-    color.rgb = GlobalIllumination(brdfData, (BRDFData)0, 0, inputData.bakedGI, occlusion, inputData.positionWS,
-                                   inputData.normalWS, inputData.viewDirectionWS, inputData.normalizedScreenSpaceUV);
+    color.rgb = GlobalIllumination(brdfData, inputData.bakedGI, occlusion, inputData.positionWS, inputData.normalWS, inputData.viewDirectionWS);
     color.a = alpha;
     SplatmapFinalColor(color, inputData.fogCoord);
 
@@ -484,7 +483,7 @@ void SplatmapFragment(
     inputData.normalWS = inputData.normalWS * alpha;
     smoothness *= alpha;
 
-    return PackGBuffersBRDFData(brdfData, inputData, smoothness, color.rgb, occlusion);
+    return BRDFDataToGbuffer(brdfData, inputData, smoothness, color.rgb, occlusion);
 
 #else
 

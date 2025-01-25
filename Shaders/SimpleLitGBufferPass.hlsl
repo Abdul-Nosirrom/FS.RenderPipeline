@@ -2,7 +2,7 @@
 #define UNIVERSAL_SIMPLELIT_GBUFFER_PASS_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/GBufferOutput.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/UnityGBuffer.hlsl"
 #if defined(LOD_FADE_CROSSFADE)
     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
 #endif
@@ -174,8 +174,10 @@ Varyings LitPassVertexSimple(Attributes input)
     return output;
 }
 
+
+
 // Used for StandardSimpleLighting shader
-GBufferFragOutput LitPassFragmentSimple(Varyings input)
+FragmentOutput LitPassFragmentSimple(Varyings input)
 {
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
@@ -201,7 +203,7 @@ GBufferFragOutput LitPassFragmentSimple(Varyings input)
     MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI, inputData.shadowMask);
     half4 color = half4(inputData.bakedGI * surfaceData.albedo + surfaceData.emission, surfaceData.alpha);
 
-    return PackGBuffersSurfaceData(surfaceData, inputData, color.rgb);
+    return SurfaceDataToGbuffer(surfaceData, inputData, color.rgb, kLightingSimpleLit);
 };
 
 #endif

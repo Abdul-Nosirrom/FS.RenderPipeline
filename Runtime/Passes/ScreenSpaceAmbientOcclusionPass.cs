@@ -7,6 +7,11 @@ namespace UnityEngine.Rendering.Universal
     // The Screen Space Ambient Occlusion (SSAO) Pass
     internal class ScreenSpaceAmbientOcclusionPass : ScriptableRenderPass
     {
+        // Properties
+        private bool isRendererDeferred => m_Renderer != null
+                                           && m_Renderer is UniversalRenderer
+                                           && ((UniversalRenderer)m_Renderer).renderingModeActual == RenderingMode.Deferred;
+
         // Private Variables
         private readonly bool m_SupportsR8RenderTextureFormat = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.R8);
         private int m_BlueNoiseTextureIndex = 0;
@@ -150,7 +155,7 @@ namespace UnityEngine.Rendering.Universal
             m_CurrentSettings = featureSettings;
 
             // RenderPass Event + Source Settings (Depth / Depth&Normals
-            if (renderer is UniversalRenderer { usesDeferredLighting: true })
+            if (isRendererDeferred)
             {
                 renderPassEvent = m_CurrentSettings.AfterOpaque ? RenderPassEvent.AfterRenderingOpaques : RenderPassEvent.AfterRenderingGbuffer;
 

@@ -219,8 +219,8 @@ namespace UnityEngine.Rendering.Universal.Internal
                 }
                 m_LightCount -= lightOffset;
 
-                // If there's 1 or more directional lights, one of them must be the main light
-                m_DirectionalLightCount = lightOffset > 0 ? lightOffset - 1 : 0;
+                m_DirectionalLightCount = lightOffset;
+                if (lightData.mainLightIndex != -1 && m_DirectionalLightCount != 0) m_DirectionalLightCount -= 1;
 
                 var visibleLights = lightData.visibleLights.GetSubArray(lightOffset, m_LightCount);
                 var reflectionProbes = renderingData.cullResults.visibleReflectionProbes;
@@ -413,10 +413,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             {
                 if (m_UseForwardPlus)
                 {
-                    if (lightData.reflectionProbeAtlas)
-                    {
-                        m_ReflectionProbeManager.UpdateGpuData(CommandBufferHelpers.GetNativeCommandBuffer(cmd), ref renderingData.cullResults);
-                    }
+                    m_ReflectionProbeManager.UpdateGpuData(CommandBufferHelpers.GetNativeCommandBuffer(cmd), ref renderingData.cullResults);
 
                     using (new ProfilingScope(m_ProfilingSamplerFPComplete))
                     {
@@ -441,8 +438,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                 bool lightCountCheck = (cameraData.renderer.stripAdditionalLightOffVariants && lightData.supportsAdditionalLights) || additionalLightsCount > 0;
                 cmd.SetKeyword(ShaderGlobalKeywords.AdditionalLightsVertex, lightCountCheck && additionalLightsPerVertex && !m_UseForwardPlus);
                 cmd.SetKeyword(ShaderGlobalKeywords.AdditionalLightsPixel,  lightCountCheck && !additionalLightsPerVertex && !m_UseForwardPlus);
-                cmd.SetKeyword(ShaderGlobalKeywords.ClusterLightLoop, m_UseForwardPlus);
-                cmd.SetKeyword(ShaderGlobalKeywords.ForwardPlus, m_UseForwardPlus); // Backward compatibility. Deprecated in 6.1.
+                cmd.SetKeyword(ShaderGlobalKeywords.ForwardPlus, m_UseForwardPlus);
 
                 bool isShadowMask = lightData.supportsMixedLighting && m_MixedLightingSetup == MixedLightingSetup.ShadowMask;
                 bool isShadowMaskAlways = isShadowMask && QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask;
@@ -453,7 +449,6 @@ namespace UnityEngine.Rendering.Universal.Internal
 
                 cmd.SetKeyword(ShaderGlobalKeywords.ReflectionProbeBlending, lightData.reflectionProbeBlending);
                 cmd.SetKeyword(ShaderGlobalKeywords.ReflectionProbeBoxProjection, lightData.reflectionProbeBoxProjection);
-                cmd.SetKeyword(ShaderGlobalKeywords.ReflectionProbeAtlas, lightData.reflectionProbeAtlas);
 
                 var asset = UniversalRenderPipeline.asset;
                 bool apvIsEnabled = asset != null && asset.lightProbeSystem == LightProbeSystem.ProbeVolumes;
@@ -485,11 +480,6 @@ namespace UnityEngine.Rendering.Universal.Internal
                 {
                     cmd.SetKeyword(ShaderGlobalKeywords.LightCookies, false);
                 }
-
-                if (GraphicsSettings.TryGetRenderPipelineSettings<LightmapSamplingSettings>(out var lightmapSamplingSettings))
-                    cmd.SetKeyword(ShaderGlobalKeywords.LIGHTMAP_BICUBIC_SAMPLING, lightmapSamplingSettings.useBicubicLightmapSampling);
-                else
-                    cmd.SetKeyword(ShaderGlobalKeywords.LIGHTMAP_BICUBIC_SAMPLING, false);
             }
         }
 

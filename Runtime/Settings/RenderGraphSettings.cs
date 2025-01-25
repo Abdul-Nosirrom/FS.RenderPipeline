@@ -3,34 +3,8 @@ using System;
 namespace UnityEngine.Rendering.Universal
 {
     /// <summary>
-    /// A graphics settings container for settings related to Render Graph for <see cref="UniversalRenderPipeline"/>.
+    /// Settings for Render Graph
     /// </summary>
-    /// <remarks>
-    /// To change those settings, go to Editor > Project Settings in the Graphics tab (URP).
-    /// Changing this through the API is only allowed in the Editor. In the Player, this raises an error.
-    /// </remarks>
-    /// <seealso cref="IRenderPipelineGraphicsSettings"/>
-    /// <example>
-    /// <para> This example demonstrates how to determine whether your project uses RenderGraph in URP. </para>
-    /// <code>
-    /// using UnityEngine.Rendering;
-    /// using UnityEngine.Rendering.Universal;
-    /// 
-    /// public static class URPRenderGraphHelper
-    /// {
-    ///     public static bool enabled
-    ///     {
-    ///         get
-    ///         {
-    ///             var gs = GraphicsSettings.GetRenderPipelineSettings&lt;RenderGraphSettings&gt;();
-    ///             if (gs == null) //not in URP
-    ///                 return false;
-    ///             return !gs.enableRenderCompatibilityMode;
-    ///         }
-    ///     }
-    /// }
-    /// </code>
-    /// </example>
     [Serializable]
     [SupportedOnRenderPipeline(typeof(UniversalRenderPipelineAsset))]
     [Categorization.CategoryInfo(Name = "Render Graph", Order = 50)]
@@ -46,7 +20,7 @@ namespace UnityEngine.Rendering.Universal
         [SerializeField][HideInInspector]
         private Version m_Version;
 
-        /// <summary>Current version of the settings container. Used only for upgrading a project.</summary>
+        /// <summary>Current version.</summary>
         public int version => (int)m_Version;
         #endregion
 

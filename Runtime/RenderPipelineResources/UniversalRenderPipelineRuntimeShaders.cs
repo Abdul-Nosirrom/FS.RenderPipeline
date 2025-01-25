@@ -3,34 +3,8 @@ using System;
 namespace UnityEngine.Rendering.Universal
 {
     /// <summary>
-    /// A resource container for shaders used for <see cref="UniversalRenderPipeline"/>.
+    /// Class containing shader resources used in URP.
     /// </summary>
-    /// <remarks>
-    /// You cannot edit these resources through the editor's UI; use the API for advanced changes.
-    /// Changing this through the API is only allowed in the Editor. In the Player, this raises an error.
-    /// </remarks>
-    /// <seealso cref="IRenderPipelineResources"/>
-    /// <example>
-    /// <para> Here is an example of how to get the blit shader used by URP. </para>
-    /// <code>
-    /// using UnityEngine.Rendering;
-    /// using UnityEngine.Rendering.Universal;
-    /// 
-    /// public static class URPUniversalRendererRuntimeShadersHelper
-    /// {
-    ///     public static Shader blit
-    ///     {
-    ///         get
-    ///         {
-    ///             var gs = GraphicsSettings.GetRenderPipelineSettings&lt;UniversalRenderPipelineRuntimeShaders&gt;();
-    ///             if (gs == null) //not in URP
-    ///                 return null;
-    ///             return gs.coreBlitPS;
-    ///         }
-    ///     }
-    /// }
-    /// </code>
-    /// </example>
     [Serializable]
     [SupportedOnRenderPipeline(typeof(UniversalRenderPipelineAsset))]
     [Categorization.CategoryInfo(Name = "R: Runtime Shaders", Order = 1000), HideInInspector]
@@ -38,7 +12,7 @@ namespace UnityEngine.Rendering.Universal
     {
         [SerializeField][HideInInspector] private int m_Version = 0;
 
-        /// <summary>Current version of the resource container. Used only for upgrading a project.</summary>
+        /// <summary>Version of the resource. </summary>
         public int version => m_Version;
         bool IRenderPipelineGraphicsSettings.isAvailableInPlayerBuild => true;
 
@@ -46,7 +20,7 @@ namespace UnityEngine.Rendering.Universal
         Shader m_FallbackErrorShader;
 
         /// <summary>
-        /// Fallback shader used when error happens.
+        /// Fallback error shader
         /// </summary>
         public Shader fallbackErrorShader
         {
@@ -60,7 +34,7 @@ namespace UnityEngine.Rendering.Universal
         internal Shader m_BlitHDROverlay;
 
         /// <summary>
-        /// Blit shader used for HDR Overlay.
+        /// Blit HDR Overlay shader.
         /// </summary>
         public Shader blitHDROverlay
         {
@@ -73,7 +47,7 @@ namespace UnityEngine.Rendering.Universal
         internal Shader m_CoreBlitPS;
 
         /// <summary>
-        /// Default blit shader used for blit operation.
+        /// Core Blit shader.
         /// </summary>
         public Shader coreBlitPS
         {
@@ -86,7 +60,7 @@ namespace UnityEngine.Rendering.Universal
         internal Shader m_CoreBlitColorAndDepthPS;
 
         /// <summary>
-        /// Blit shader used for both Color And Depth blit operation.
+        /// Core Blit Color And Depth shader.
         /// </summary>
         public Shader coreBlitColorAndDepthPS
         {
@@ -99,7 +73,7 @@ namespace UnityEngine.Rendering.Universal
         private Shader m_SamplingPS;
 
         /// <summary>
-        /// Shader used when sampling is required.
+        /// Sampling shader.
         /// </summary>
         public Shader samplingPS
         {

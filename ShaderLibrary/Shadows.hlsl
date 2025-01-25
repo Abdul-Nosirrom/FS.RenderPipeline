@@ -5,7 +5,6 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/ShadowSamplingTent.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/GlobalSamplers.hlsl"
 #include "Core.hlsl"
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
 #include "Shadows.deprecated.hlsl"
 
 #define MAX_SHADOW_CASCADES 4
@@ -41,11 +40,7 @@
 #endif
 
 #if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
-    #if defined(LIGHTMAP_BICUBIC_SAMPLING)
-    #define SAMPLE_SHADOWMASK(uv) SampleLightmapBicubic(SHADOWMASK_NAME, SHADOWMASK_SAMPLER_NAME, uv SHADOWMASK_SAMPLE_EXTRA_ARGS);
-    #else
     #define SAMPLE_SHADOWMASK(uv) SAMPLE_TEXTURE2D_LIGHTMAP(SHADOWMASK_NAME, SHADOWMASK_SAMPLER_NAME, uv SHADOWMASK_SAMPLE_EXTRA_ARGS);
-    #endif
 #elif !defined (LIGHTMAP_ON)
     #define SAMPLE_SHADOWMASK(uv) unity_ProbesOcclusion;
 #else
@@ -65,7 +60,7 @@ TEXTURE2D_SHADOW(_AdditionalLightsShadowmapTexture);
 SAMPLER_CMP(sampler_LinearClampCompare);
 
 // GLES3 causes a performance regression in some devices when using CBUFFER.
-#ifndef LIGHT_SHADOWS_NO_CBUFFER
+#ifndef SHADER_API_GLES3
 CBUFFER_START(LightShadows)
 #endif
 
@@ -100,7 +95,7 @@ float4x4    _AdditionalLightsWorldToShadow[MAX_VISIBLE_LIGHTS];  // Per-shadow-s
 #endif
 #endif
 
-#ifndef LIGHT_SHADOWS_NO_CBUFFER
+#ifndef SHADER_API_GLES3
 CBUFFER_END
 #endif
 
@@ -202,10 +197,7 @@ half4 GetAdditionalLightShadowParams(int lightIndex)
             results = _AdditionalShadowParams_SSBO[lightIndex];
         #else
             results = _AdditionalShadowParams[lightIndex];
-            // workaround: Avoid failing the graphics test using Terrain Shader on Android Vulkan when using dynamic branching for fog keywords.
-            #if !SKIP_SHADOWS_LIGHT_INDEX_CHECK
-                results.w = lightIndex < 0 ? -1 : results.w;
-            #endif
+            results.w = lightIndex < 0 ? -1 : results.w;
         #endif
     #else
         // Same defaults as set in AdditionalLightsShadowCasterPass.cs
@@ -363,7 +355,7 @@ float4 TransformWorldToShadowCoord(float3 positionWS)
     #else
         half cascadeIndex = half(0.0);
     #endif
-
+    
     float4 shadowCoord = float4(mul(_MainLightWorldToShadow[cascadeIndex], float4(positionWS, 1.0)).xyz, 0.0);
 #endif
     return shadowCoord;
@@ -501,12 +493,6 @@ half AdditionalLightShadow(int lightIndex, float3 positionWS, half3 lightDirecti
     half realtimeShadow = AdditionalLightRealtimeShadow(lightIndex, positionWS, lightDirection, shadowParams, samplingData);
 
     #ifdef CALCULATE_BAKED_SHADOWS
-        // This fading of the baked shadow using the light's shadow strength parameter needs
-        // to be guarded against the Real-Time Shadow keyword as _AdditionalShadowParams is
-        // only included in URP Shaders and updated when real time additional shadows are enabled.
-        #ifndef ADDITIONAL_LIGHT_CALCULATE_SHADOWS
-            shadowParams.x = half(1.0);
-        #endif
         half bakedShadow = BakedShadow(shadowMask, occlusionProbeChannels, shadowParams);
     #else
         half bakedShadow = half(1.0);

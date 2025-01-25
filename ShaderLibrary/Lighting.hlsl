@@ -205,19 +205,17 @@ half4 CalculateFinalColor(LightingData lightingData, half alpha)
 
 half4 CalculateFinalColor(LightingData lightingData, half3 albedo, half alpha, float fogCoord)
 {
-    half fogFactor = 0;
     #if defined(_FOG_FRAGMENT)
-    #if defined(FOG_LINEAR_KEYWORD_DECLARED)
-        if (FOG_LINEAR || FOG_EXP || FOG_EXP2)
-        {
-            float viewZ = -fogCoord;
-            float nearToFarZ = max(viewZ - _ProjectionParams.y, 0);
-            fogFactor = ComputeFogFactorZ0ToFar(nearToFarZ);
-        }
-    #endif // defined(FOG_LINEAR_KEYWORD_DECLARED)
-    #else  // #if defined(_FOG_FRAGMENT)
-    fogFactor = fogCoord;
-    #endif // #if defined(_FOG_FRAGMENT)
+        #if (defined(FOG_LINEAR) || defined(FOG_EXP) || defined(FOG_EXP2))
+        float viewZ = -fogCoord;
+        float nearToFarZ = max(viewZ - _ProjectionParams.y, 0);
+        half fogFactor = ComputeFogFactorZ0ToFar(nearToFarZ);
+    #else
+        half fogFactor = 0;
+        #endif
+    #else
+    half fogFactor = fogCoord;
+    #endif
     half3 lightingColor = CalculateLightingColor(lightingData, albedo);
     half3 finalColor = MixFog(lightingColor, fogFactor);
 
@@ -313,10 +311,10 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     #if defined(_ADDITIONAL_LIGHTS)
     uint pixelLightCount = GetAdditionalLightsCount();
 
-    #if USE_CLUSTER_LIGHT_LOOP
+    #if USE_FORWARD_PLUS
     [loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
     {
-        CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK
+        FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
 
         Light light = GetAdditionalLight(lightIndex, inputData, shadowMask, aoFactor);
 
@@ -411,10 +409,10 @@ half4 UniversalFragmentBlinnPhong(InputData inputData, SurfaceData surfaceData)
     #if defined(_ADDITIONAL_LIGHTS)
     uint pixelLightCount = GetAdditionalLightsCount();
 
-    #if USE_CLUSTER_LIGHT_LOOP
+    #if USE_FORWARD_PLUS
     [loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
     {
-        CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK
+        FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
 
         Light light = GetAdditionalLight(lightIndex, inputData, shadowMask, aoFactor);
 #ifdef _LIGHT_LAYERS
