@@ -1,5 +1,5 @@
 {
-  "name": "com.fs.render-pipeline",
+  "name": "com.unity.render-pipelines.universal",
   "description": "The FS Render Pipeline (FSRP) is a URP fork with customizations specific to FS",
   "version": "17.0.3",
   "unity": "6000.0",
